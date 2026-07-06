@@ -7,7 +7,7 @@
     zone_id: "Z0333367NHGBMIBI3F" 
     domain_name: "mahidevops.fun"
     # we can pass instances through command line using -e
-     instances: 
+    instances: 
      - mongodb
      - redis
      - mysql
