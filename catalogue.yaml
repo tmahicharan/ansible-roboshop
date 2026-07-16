@@ -1,0 +1,81 @@
+- name: catalogue conf
+  hosts: catalogue
+  become: yes
+  tasks:
+  - name: disable nodejs module
+    ansible.builtin.command: dnf module disable nodejs -y
+
+  - name: enable nodejs module
+    ansible.builtin.command: dnf module enable nodejs:20 -y
+
+  - name: install nodejs
+    ansible.builtin.package:
+      name: nodejs
+      state: present
+
+  - name: create catalogue user
+    ansible.builtin.user:
+      name: roboshop
+      comment: Roboshop system user
+      shell: /sbin/nologin
+      home: /app
+
+  - name: remove app directory
+    ansible.builtin.file:
+     path: /app
+     state: absent
+    
+  - name: Create a directory 
+    ansible.builtin.file:
+     path: /app
+     state: directory
+
+  - name: delete old content
+    ansible.builtin.file:
+      path: /tmp/catalogue
+      state: absent  
+
+  - name: Download catalogue zip file
+    ansible.builtin.get_url:
+     url: https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip 
+     dest: /tmp/catalogue.zip
+  
+  - name: Unzip file
+    ansible.builtin.unarchive:
+     src: /tmp/catalogue.zip
+     dest: /app
+     remote_src: yes
+
+  - name: Install dependencies
+    community.general.npm:
+     path: /app
+
+  - name: copy catalogue service
+    ansible.builtin.copy:
+      src: catalogue.service
+      dest: etc/systemd/system/catalogue.service
+
+  - name: copying mongo repo file
+    ansible.builtin.copy:
+      src: mongo.repo
+      dest: /etc/yum.repos.d/mongo.repo
+    
+  - name: install mongodb
+    ansible.builtin.package:
+      name: mongodb-mongosh
+      state: present
+ 
+  - name: idemptation if products are load
+    ansible.builtin.command: mongosh mongodb.mahidevops.fun --quiet --eval "db.getMongo().getDBNames().indexOf('catalogue')
+    register: catalogue_output
+
+  - name: load products
+    ansible.builtin.shell: mongosh --host MONGODB-SERVER-IPADDRESS </app/db/master-data.js
+    when: catalogue_output.stdout | int < 0 
+  
+  - name: start and enable 
+    ansible.builtin.systemd_service:
+      name: catalogue
+      state: started
+      enabled: yes
+      daemon-reload: True
