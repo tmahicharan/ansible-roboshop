@@ -71,7 +71,7 @@
      state: present
 
   - name: Import schema.sql
-    ansible.mysql.mysql_db:
+    community.mysql.mysql_db:
       state: import
       name: all
       login_host: mysql.mahidevops.fun
