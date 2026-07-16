@@ -46,7 +46,7 @@
 
   - name: Unzip file
     ansible.builtin.unarchive:
-     src: /tmp/user.zip
+     src: /tmp/shipping.zip
      dest: /app
      remote_src: yes
 
